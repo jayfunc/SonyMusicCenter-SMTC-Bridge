@@ -1,5 +1,4 @@
 @echo off
-chcp 65001 >nul
 net session >nul 2>&1
 if %errorLevel% == 0 (
     echo [OK] Administrator privileges confirmed. / 已获取管理员权限。
