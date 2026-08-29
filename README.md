@@ -1,4 +1,4 @@
-# Sony Music Center SMTC Bridge
+﻿# Sony Music Center SMTC Bridge
 [简体中文版说明 (Chinese Version)](README_zh-CN.md)
 
 A native Windows 10/11 System Media Transport Controls (SMTC) bridge for the desktop version of Sony Music Center for PC.
@@ -19,6 +19,19 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 3. Right-click on **`Install.bat`** and select **Run as administrator**.
    *(The script safely copies the bridge executable and patches the app's startup scripts).*
 4. Open Sony Music Center and play a song!
+
+
+### Manual Installation (If the batch script fails)
+If Install.bat flashes and closes immediately (e.g., due to antivirus restrictions or UAC issues), you can install the bridge manually:
+
+1. Close **Sony Music Center**.
+2. Open Task Manager and ensure SonyMusicCenterSMTC.exe is completely closed (if it was running).
+3. Copy **SonyMusicCenterSMTC.exe** to your Sony Music Center installation directory (usually C:\Program Files (x86)\Sony\Music Center\).
+4. Navigate to C:\Program Files (x86)\Sony\Music Center\resources\app\.
+5. Rename the existing index.js to index.js.bak (this is your backup).
+6. Copy the **enderer-hook.js** file from this project into that pp folder and rename it to **index.js**.
+7. Open the newly renamed index.js in a text editor (like Notepad), scroll to the very bottom, add a new line, and append exactly this text: equire('@z-app/core');
+8. Save the file and start Sony Music Center!
 
 ## Architecture
 
