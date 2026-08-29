@@ -107,32 +107,26 @@ electron.app.on('web-contents-created', (e, wc) => {
                             duration = (parseFloat(slider.max) / 1000).toString();
                         }
 
-                        let coverUrl = '';
-                        const allBg = [];
-                        document.querySelectorAll('*').forEach(el => {
-                            const bg = window.getComputedStyle(el).backgroundImage;
-                            if (bg && bg !== 'none' && bg.includes('url(')) {
-                                const match = bg.match(/url\(["']?(.*?)["']?\)/);
-                                if (match && match[1]) {
-                                    const u = match[1];
-                                    if (!u.includes('.svg') && !u.includes('icon')) {
-                                        if (el.className.includes('artwork') || el.className.includes('cover')) {
-                                            coverUrl = u;
-                                        }
-                                    }
+                                                let coverUrl = '';
+                        const els = document.querySelectorAll('img, div');
+                        els.forEach(el => {
+                            let u = '';
+                            if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                                u = el.src;
+                            } else {
+                                const bg = window.getComputedStyle(el).backgroundImage;
+                                if (bg && bg !== 'none' && bg.includes('url(')) {
+                                    const match = bg.match(/url\(["']?(.*?)["']?\)/);
+                                    if (match && match[1]) u = match[1];
+                                }
+                            }
+                            if (u && !u.includes('.svg') && !u.includes('icon') && !u.includes('default')) {
+                                const cn = (typeof el.className === 'string') ? el.className.toLowerCase() : '';
+                                if (cn.includes('artwork') || cn.includes('cover') || cn.includes('album') || cn.includes('jacket') || cn.includes('player') || u.startsWith('blob:')) {
+                                    coverUrl = u;
                                 }
                             }
                         });
-                        if (!coverUrl) {
-                            document.querySelectorAll('img').forEach(el => {
-                                if (!el.src.includes('.svg') && !el.src.includes('icon')) {
-                                    if (el.className.includes('artwork') || el.className.includes('cover')) {
-                                        coverUrl = el.src;
-                                    }
-                                }
-                            });
-                        }
-
                         const currentPos = parseFloat(position);
                         const timeSinceLastUpdate = (Date.now() - lastUpdateTime) / 1000;
                         const expectedPos = (lastState === 'playing') ? (lastPosition + timeSinceLastUpdate) : lastPosition;
@@ -178,3 +172,5 @@ electron.app.on('web-contents-created', (e, wc) => {
     wc.on('dom-ready', onReady);
     wc.on('did-finish-load', onReady);
 });
+
+
