@@ -23,8 +23,7 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 ## Architecture
 
 This project consists of two components:
-1. **\
-enderer-hook.js\:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
+1. **\enderer-hook.js\:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
 2. **\SonyMusicCenterSMTC.cs\:** A native C# WinRT executable that instantiates a \MediaPlayer\ and a virtual \MediaStreamSource\ to perfectly control the Windows OS timeline without UI glitches.
 
 ## Uninstallation
