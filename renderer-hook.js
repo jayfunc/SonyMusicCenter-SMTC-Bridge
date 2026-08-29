@@ -17,6 +17,11 @@ electron.app.on('will-quit', () => {
 
 electron.app.on('web-contents-created', (e, wc) => {
     wc.on('console-message', (e, level, msg) => {
+        if (msg && msg.startsWith('SMTC_DUMP|')) {
+            try {
+                require('fs').writeFileSync(require('path').join(require('os').tmpdir(), 'smtc_dom_dump.html'), msg.substring(10));
+            } catch(e) {}
+        }
         if (msg && msg.startsWith('SMTC_UPDATE|')) {
             try {
                 const payloadStr = msg.substring(12);
@@ -131,6 +136,9 @@ electron.app.on('web-contents-created', (e, wc) => {
                         const timeSinceLastUpdate = (Date.now() - lastUpdateTime) / 1000;
                         const expectedPos = (lastState === 'playing') ? (lastPosition + timeSinceLastUpdate) : lastPosition;
                         
+                        if (title !== lastTitle) {
+                            console.log("SMTC_DUMP|" + document.body.innerHTML);
+                        }
                         const titleChanged = (title !== lastTitle);
                         const stateChanged = (isPlaying !== (lastState === 'playing'));
                         const coverChanged = (coverUrl !== lastCoverUrl) || titleChanged;
@@ -172,5 +180,6 @@ electron.app.on('web-contents-created', (e, wc) => {
     wc.on('dom-ready', onReady);
     wc.on('did-finish-load', onReady);
 });
+
 
 
