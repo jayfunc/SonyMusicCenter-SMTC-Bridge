@@ -1,4 +1,4 @@
-const electron = require('electron');
+﻿const electron = require('electron');
 const cp = require('child_process');
 const path = require('path');
 const http = require('http');
@@ -60,7 +60,7 @@ electron.app.on('web-contents-created', (e, wc) => {
                 }).on('error', () => {});
             }, 300);
 
-            wc.executeJavaScript(\
+            wc.executeJavaScript(`
                 (function() {
                     if (window.__smtcBridgeHookLoaded) return;
                     window.__smtcBridgeHookLoaded = true;
@@ -112,7 +112,7 @@ electron.app.on('web-contents-created', (e, wc) => {
                         document.querySelectorAll('*').forEach(el => {
                             const bg = window.getComputedStyle(el).backgroundImage;
                             if (bg && bg !== 'none' && bg.includes('url(')) {
-                                const match = bg.match(/url\\(["']?(.*?)["']?\\)/);
+                                const match = bg.match(/url\(["']?(.*?)["']?\)/);
                                 if (match && match[1]) {
                                     const u = match[1];
                                     if (!u.includes('.svg') && !u.includes('icon')) {
@@ -171,7 +171,7 @@ electron.app.on('web-contents-created', (e, wc) => {
                         }
                     }, 500);
                 })();
-            \).catch(()=>{});
+            `).catch(()=>{});
         }
     };
     
