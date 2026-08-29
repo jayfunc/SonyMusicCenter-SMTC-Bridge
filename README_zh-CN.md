@@ -29,9 +29,12 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 3. 把本项目里的 **`SonyMusicCenterSMTC.exe`** 复制到安装目录下（默认是 `C:\Program Files (x86)\Sony\Music Center\`）。
 4. 打开目录 `C:\Program Files (x86)\Sony\Music Center\resources\app\`。
 5. 把里面原来的 `index.js` 重命名为 `index.js.bak` 作为备份。
-6. 把本项目里的 **`renderer-hook.js`** 复制到这个 `app` 目录下，并将其重命名为 **`index.js`**。
-7. 用记事本打开这个新的 `index.js`，滚动到最底部，另起一行并添加这句代码：`require('@z-app/core');`
-8. 保存文件，重新打开 Sony Music Center 即可！
+6. 把本项目里的 **`renderer-hook.js`** 复制到你的 **桌面**（或其他任意你有编辑权限的文件夹）。
+7. 将桌面上的这个文件重命名为 **`index.js`**。
+8. 用记事本打开它，滚动到最底部，另起一行并添加这句代码：`require('@z-app/core');`
+9. 保存文件。
+10. 将桌面上修改好的 `index.js` 复制并替换到 `C:\Program Files (x86)\Sony\Music Center\resources\app\` 目录中。（系统会弹出需要管理员权限的提示，点击“继续”即可）。
+11. 重新打开 Sony Music Center 即可！
 
 ## 架构原理
 
@@ -46,5 +49,6 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 2. 将里面那个被修改过的 `index.js` 文件直接删除。
 3. 把旁边的 `index.js.bak` 文件重命名回 `index.js`。
 4. 打开 `C:\Program Files (x86)\Sony\Music Center\` 主目录，删除 `SonyMusicCenterSMTC.exe` 即可。
+
 
 
