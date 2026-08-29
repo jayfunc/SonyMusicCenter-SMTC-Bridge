@@ -75,7 +75,7 @@ class SmtcServer
                     string state = data.ContainsKey("state") ? data["state"] as string : null;
                     string position = data.ContainsKey("position") ? data["position"] as string : null;
                     string duration = data.ContainsKey("duration") ? data["duration"] as string : null;
-                    string cover = data.ContainsKey("cover") ? data["cover"] as string : null;
+                    string cover = data.ContainsKey("cover") ? data["cover"] as string : null; try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "smtc_log.txt"), string.Format("[{0}] Title: {1}, Cover: {2}\r\n", DateTime.Now, title, cover == null ? "NULL" : (cover.Length > 100 ? cover.Substring(0, 100) + "..." : cover))); } catch {}
                     bool metaChanged = data.ContainsKey("metaChanged") ? (bool)data["metaChanged"] : true;
 
                     double durSec = 0;
@@ -122,7 +122,7 @@ class SmtcServer
                         
                         if (!string.IsNullOrEmpty(cover)) {
                             try {
-                                if (cover.StartsWith("data:image")) {
+                                if (cover.StartsWith("data:")) {
                                     int comma = cover.IndexOf(',');
                                     if (comma != -1) {
                                         byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
@@ -184,6 +184,10 @@ class SmtcServer
         }
     }
 }
+
+
+
+
 
 
 
