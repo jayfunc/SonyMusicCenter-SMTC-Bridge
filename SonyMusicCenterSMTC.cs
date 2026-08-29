@@ -62,7 +62,7 @@ class SmtcServer
                 if (req.Url.AbsolutePath == "/update" && req.HttpMethod == "POST")
                 {
                     string json = "";
-                    using (var reader = new StreamReader(req.InputStream, req.ContentEncoding))
+                    using (var reader = new StreamReader(req.InputStream, Encoding.UTF8))
                     {
                         json = reader.ReadToEnd();
                     }
