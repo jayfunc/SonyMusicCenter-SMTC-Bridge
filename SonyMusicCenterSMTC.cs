@@ -31,6 +31,13 @@ class SmtcServer
         catch (Exception e) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "smtc_err.txt"), e.ToString()); }
     }
 
+    static string logFile = Path.Combine(Path.GetTempPath(), "smtc_debug_full.txt");
+    static void Log(string message) {
+        try {
+            File.AppendAllText(logFile, string.Format("[{0:yyyy-MM-dd HH:mm:ss.fff}] {1}\r\n", DateTime.Now, message));
+        } catch {}
+    }
+
     static void Run()
     {
         player = new MediaPlayer();
@@ -184,6 +191,7 @@ class SmtcServer
         }
     }
 }
+
 
 
 
