@@ -10,6 +10,7 @@ using Windows.Media.Playback;
 using Windows.Storage.Streams;
 using System.Collections.Generic;
 using System.Web.Script.Serialization;
+using System.Runtime.InteropServices.WindowsRuntime;
 
 class SmtcServer
 {
@@ -118,30 +119,17 @@ class SmtcServer
                             
                             if (!string.IsNullOrEmpty(cover)) {
                                 try {
-                                    string tmpImg = Path.Combine(Path.GetTempPath(), "music_center_cover_" + Guid.NewGuid().ToString() + ".jpg");
-                                    bool imageReady = false;
-                                    
                                     if (cover.StartsWith("data:")) {
                                         int comma = cover.IndexOf(',');
                                         if (comma != -1) {
                                             byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
-                                            File.WriteAllBytes(tmpImg, imgData);
-                                            imageReady = true;
-                                        }
-                                    } else if (cover.StartsWith("file:///")) {
-                                        string sourcePath = Uri.UnescapeDataString(cover.Substring(8)).Replace('/', '\\');
-                                        if (File.Exists(sourcePath)) {
-                                            File.Copy(sourcePath, tmpImg, true);
-                                            imageReady = true;
-                                        } else {
-                                            props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
+                                            var stream = new InMemoryRandomAccessStream();
+                                            stream.WriteAsync(imgData.AsBuffer()).AsTask().Wait();
+                                            stream.Seek(0);
+                                            props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromStream(stream);
                                         }
                                     } else {
                                         props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
-                                    }
-                                    
-                                    if (imageReady) {
-                                        props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri("file:///" + tmpImg.Replace('\\', '/')));
                                     }
                                 } catch {}
                             }
@@ -192,4 +180,5 @@ class SmtcServer
         }
     }
 }
+
 
