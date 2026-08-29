@@ -1,25 +1,23 @@
-using System;
-using System.Net;
-using System.Threading;
+﻿using System;
 using System.IO;
+using System.Net;
 using System.Text;
-using System.Collections.Generic;
-using System.Web.Script.Serialization;
-using Windows.Media.Playback;
-using Windows.Media.Core;
+using System.Threading.Tasks;
 using Windows.Media;
 using Windows.Media.MediaProperties;
+using Windows.Media.Core;
+using Windows.Media.Playback;
 using Windows.Storage.Streams;
+using System.Collections.Generic;
+using System.Web.Script.Serialization;
 
 class SmtcServer
 {
     static MediaPlayer player;
-    static string lastAction = "";
-    static object actionLock = new object();
-    static TimeSpan currentVirtualPos = TimeSpan.Zero;
     static double lastDuration = 0;
+    static TimeSpan currentVirtualPos = TimeSpan.Zero;
+    static JavaScriptSerializer js = new JavaScriptSerializer();
 
-    [MTAThread]
     static void Main()
     {
         try {
@@ -27,42 +25,25 @@ class SmtcServer
                 File.Delete(f);
             }
         } catch {}
+
         try { Run(); }
         catch (Exception e) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "smtc_err.txt"), e.ToString()); }
-    }
-
-    static string logFile = Path.Combine(Path.GetTempPath(), "smtc_debug_full.txt");
-    static void Log(string message) {
-        try {
-            File.AppendAllText(logFile, string.Format("[{0:yyyy-MM-dd HH:mm:ss.fff}] {1}\r\n", DateTime.Now, message));
-        } catch {}
     }
 
     static void Run()
     {
         player = new MediaPlayer();
         player.CommandManager.IsEnabled = true;
-        player.CommandManager.NextBehavior.EnablingRule = MediaCommandEnablingRule.Always;
-        player.CommandManager.PreviousBehavior.EnablingRule = MediaCommandEnablingRule.Always;
 
-        player.CommandManager.PlayReceived += (sender, args) => { lock (actionLock) { lastAction = "play"; } };
-        player.CommandManager.PauseReceived += (sender, args) => { lock (actionLock) { lastAction = "pause"; } };
-        player.CommandManager.NextReceived += (sender, args) => { lock (actionLock) { lastAction = "next"; } };
-        player.CommandManager.PreviousReceived += (sender, args) => { lock (actionLock) { lastAction = "prev"; } };
-
-        HttpListener listener = new HttpListener();
+        var listener = new HttpListener();
         listener.Prefixes.Add("http://127.0.0.1:9999/");
         listener.Start();
-        
-        var js = new JavaScriptSerializer();
-        js.MaxJsonLength = 50 * 1024 * 1024;
 
         while (true)
         {
-            var context = listener.GetContext();
-            var req = context.Request;
-            var res = context.Response;
-            res.AppendHeader("Access-Control-Allow-Origin", "*");
+            var ctx = listener.GetContext();
+            var req = ctx.Request;
+            var res = ctx.Response;
 
             try
             {
@@ -75,22 +56,24 @@ class SmtcServer
                     }
                     
                     var data = js.Deserialize<Dictionary<string, object>>(json);
-                    
                     string title = data.ContainsKey("title") ? data["title"] as string : null;
                     string artist = data.ContainsKey("artist") ? data["artist"] as string : null;
                     string album = data.ContainsKey("album") ? data["album"] as string : null;
                     string state = data.ContainsKey("state") ? data["state"] as string : null;
                     string position = data.ContainsKey("position") ? data["position"] as string : null;
                     string duration = data.ContainsKey("duration") ? data["duration"] as string : null;
-                    string cover = data.ContainsKey("cover") ? data["cover"] as string : null; try { File.AppendAllText(Path.Combine(Path.GetTempPath(), "smtc_log.txt"), string.Format("[{0}] Title: {1}, Cover: {2}\r\n", DateTime.Now, title, cover == null ? "NULL" : (cover.Length > 100 ? cover.Substring(0, 100) + "..." : cover))); } catch {}
+                    string cover = data.ContainsKey("cover") ? data["cover"] as string : null;
                     bool metaChanged = data.ContainsKey("metaChanged") ? (bool)data["metaChanged"] : true;
 
                     double durSec = 0;
-                    if (duration != null) double.TryParse(duration, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out durSec);
+                    double.TryParse(duration, out durSec);
                     double posSec = 0;
-                    if (position != null) double.TryParse(position, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out posSec);
+                    double.TryParse(position, out posSec);
 
-                    if (metaChanged || player.Source == null || Math.Abs(durSec - lastDuration) > 1.0)
+                    bool recreateSource = player.Source == null || Math.Abs(durSec - lastDuration) > 1.0;
+                    MediaPlaybackItem newItem = null;
+
+                    if (recreateSource)
                     {
                         lastDuration = durSec;
                         var desc = new AudioStreamDescriptor(AudioEncodingProperties.CreatePcm(44100, 2, 16));
@@ -119,39 +102,59 @@ class SmtcServer
                         };
 
                         var source = MediaSource.CreateFromMediaStreamSource(mss);
-                        var item = new MediaPlaybackItem(source);
-                        
-                        var props = item.GetDisplayProperties();
-                        props.Type = MediaPlaybackType.Music;
-                        if (title != null) props.MusicProperties.Title = title;
-                        if (artist != null) props.MusicProperties.Artist = artist;
-                        if (album != null) props.MusicProperties.AlbumTitle = album;
-                        
-                        if (!string.IsNullOrEmpty(cover)) {
-                            try {
-                                if (cover.StartsWith("data:")) {
-                                    int comma = cover.IndexOf(',');
-                                    if (comma != -1) {
-                                        byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
-                                        string tmpImg = Path.Combine(Path.GetTempPath(), "music_center_cover_" + Guid.NewGuid().ToString() + ".jpg");
-                                        File.WriteAllBytes(tmpImg, imgData);
+                        newItem = new MediaPlaybackItem(source);
+                    }
+
+                    if (metaChanged || recreateSource)
+                    {
+                        var item = recreateSource ? newItem : (player.Source as MediaPlaybackItem);
+                        if (item != null)
+                        {
+                            var props = item.GetDisplayProperties();
+                            props.Type = MediaPlaybackType.Music;
+                            if (title != null) props.MusicProperties.Title = title;
+                            if (artist != null) props.MusicProperties.Artist = artist;
+                            if (album != null) props.MusicProperties.AlbumTitle = album;
+                            
+                            if (!string.IsNullOrEmpty(cover)) {
+                                try {
+                                    string tmpImg = Path.Combine(Path.GetTempPath(), "music_center_cover_" + Guid.NewGuid().ToString() + ".jpg");
+                                    bool imageReady = false;
+                                    
+                                    if (cover.StartsWith("data:")) {
+                                        int comma = cover.IndexOf(',');
+                                        if (comma != -1) {
+                                            byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
+                                            File.WriteAllBytes(tmpImg, imgData);
+                                            imageReady = true;
+                                        }
+                                    } else if (cover.StartsWith("file:///")) {
+                                        string sourcePath = Uri.UnescapeDataString(cover.Substring(8)).Replace('/', '\\');
+                                        if (File.Exists(sourcePath)) {
+                                            File.Copy(sourcePath, tmpImg, true);
+                                            imageReady = true;
+                                        } else {
+                                            props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
+                                        }
+                                    } else {
+                                        props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
+                                    }
+                                    
+                                    if (imageReady) {
                                         props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri("file:///" + tmpImg.Replace('\\', '/')));
                                     }
-                                } else {
-                                    if (cover.StartsWith("file:///")) {
-                                        cover = "file:///" + Uri.UnescapeDataString(cover.Substring(8)).Replace('\\', '/');
-                                    }
-                                    props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
-                                }
-                            } catch {}
+                                } catch {}
+                            }
+                            item.ApplyDisplayProperties(props);
                         }
-                        item.ApplyDisplayProperties(props);
-                        player.Source = item;
+                    }
+
+                    if (recreateSource && newItem != null) {
+                        player.Source = newItem;
                     }
 
                     if (position != null) {
                         try {
-                            // If difference is large, seek the player
                             if (Math.Abs(player.PlaybackSession.Position.TotalSeconds - posSec) > 3) {
                                 player.PlaybackSession.Position = TimeSpan.FromSeconds(posSec);
                             }
@@ -159,44 +162,34 @@ class SmtcServer
                     }
 
                     if (state == "playing") player.Play();
-                    else player.Pause();
+                    else if (state == "paused") player.Pause();
 
-                    res.StatusCode = 200;
-                    res.Close();
+                    var responseBytes = Encoding.UTF8.GetBytes("OK");
+                    res.ContentLength64 = responseBytes.Length;
+                    res.OutputStream.Write(responseBytes, 0, responseBytes.Length);
                 }
-                else if (req.Url.AbsolutePath == "/poll")
+                else if (req.Url.AbsolutePath == "/poll" && req.HttpMethod == "GET")
                 {
-                    string action = "";
-                    lock (actionLock)
-                    {
-                        action = lastAction;
-                        lastAction = "";
-                    }
-                    byte[] buffer = Encoding.UTF8.GetBytes(action);
-                    res.ContentLength64 = buffer.Length;
-                    res.OutputStream.Write(buffer, 0, buffer.Length);
-                    res.Close();
+                    string command = "";
+                    res.AddHeader("Access-Control-Allow-Origin", "*");
+                    var responseBytes = Encoding.UTF8.GetBytes(command);
+                    res.ContentLength64 = responseBytes.Length;
+                    res.OutputStream.Write(responseBytes, 0, responseBytes.Length);
                 }
                 else
                 {
                     res.StatusCode = 404;
-                    res.Close();
                 }
             }
             catch (Exception e)
             {
                 File.WriteAllText(Path.Combine(Path.GetTempPath(), "smtc_req_err.txt"), e.ToString());
+            }
+            finally
+            {
                 try { res.Close(); } catch { }
             }
         }
     }
 }
-
-
-
-
-
-
-
-
 
