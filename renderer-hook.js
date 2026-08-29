@@ -139,7 +139,7 @@ electron.app.on('web-contents-created', (e, wc) => {
                         
                         const titleChanged = (title !== lastTitle);
                         const stateChanged = (isPlaying !== (lastState === 'playing'));
-                        const coverChanged = (coverUrl !== lastCoverUrl);
+                        const coverChanged = (coverUrl !== lastCoverUrl) || titleChanged;
                         const seeked = Math.abs(currentPos - expectedPos) > 3;
 
                         const sendUpdate = (covData) => {
