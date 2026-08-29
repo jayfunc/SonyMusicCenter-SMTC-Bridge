@@ -84,15 +84,17 @@ electron.app.on('web-contents-created', (e, wc) => {
                         return text;
                     }
 
-                    function fetchBlobToBase64(url, cb) {
-                        fetch(url)
-                            .then(r => r.blob())
-                            .then(blob => {
-                                const reader = new FileReader();
-                                reader.onloadend = () => cb(reader.result);
-                                reader.readAsDataURL(blob);
-                            })
-                            .catch(() => cb(''));
+                    function getBase64Image(imgEl) {
+                        try {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = imgEl.naturalWidth || imgEl.width || 300;
+                            canvas.height = imgEl.naturalHeight || imgEl.height || 300;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(imgEl, 0, 0);
+                            return canvas.toDataURL('image/jpeg', 0.9);
+                        } catch (e) {
+                            return '';
+                        }
                     }
 
                     setInterval(() => {
@@ -112,7 +114,8 @@ electron.app.on('web-contents-created', (e, wc) => {
                             duration = (parseFloat(slider.max) / 1000).toString();
                         }
 
-                                                let coverUrl = '';
+                        let coverUrl = '';
+                        let coverImgEl = null;
                         const els = document.querySelectorAll('img, div');
                         els.forEach(el => {
                             let u = '';
@@ -129,9 +132,13 @@ electron.app.on('web-contents-created', (e, wc) => {
                                 const cn = (typeof el.className === 'string') ? el.className.toLowerCase() : '';
                                 if (cn.includes('artwork') || cn.includes('cover') || cn.includes('album') || cn.includes('jacket') || cn.includes('player') || u.startsWith('blob:')) {
                                     coverUrl = u;
+                                    if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                                        coverImgEl = el;
+                                    }
                                 }
                             }
                         });
+
                         const currentPos = parseFloat(position);
                         const timeSinceLastUpdate = (Date.now() - lastUpdateTime) / 1000;
                         const expectedPos = (lastState === 'playing') ? (lastPosition + timeSinceLastUpdate) : lastPosition;
@@ -158,11 +165,10 @@ electron.app.on('web-contents-created', (e, wc) => {
                             
                             if (coverChanged) {
                                 lastCoverUrl = coverUrl;
-                                if (coverUrl.startsWith('blob:')) {
-                                    fetchBlobToBase64(coverUrl, (b64) => {
-                                        lastCoverData = b64;
-                                        sendUpdate(lastCoverData);
-                                    });
+                                if (coverUrl.startsWith('blob:') && coverImgEl) {
+                                    let b64 = getBase64Image(coverImgEl);
+                                    lastCoverData = b64 || '';
+                                    sendUpdate(lastCoverData);
                                 } else {
                                     lastCoverData = coverUrl;
                                     sendUpdate(lastCoverData);
@@ -180,6 +186,3 @@ electron.app.on('web-contents-created', (e, wc) => {
     wc.on('dom-ready', onReady);
     wc.on('did-finish-load', onReady);
 });
-
-
-
