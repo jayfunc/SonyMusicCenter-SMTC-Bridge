@@ -22,15 +22,15 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 
 
 ### Manual Installation (If the batch script fails)
-If Install.bat flashes and closes immediately (e.g., due to antivirus restrictions or UAC issues), you can install the bridge manually:
+If `Install.bat` flashes and closes immediately (e.g., due to antivirus restrictions or UAC issues), you can install the bridge manually:
 
 1. Close **Sony Music Center**.
-2. Open Task Manager and ensure SonyMusicCenterSMTC.exe is completely closed (if it was running).
-3. Copy **SonyMusicCenterSMTC.exe** to your Sony Music Center installation directory (usually C:\Program Files (x86)\Sony\Music Center\).
-4. Navigate to C:\Program Files (x86)\Sony\Music Center\resources\app\.
-5. Rename the existing index.js to index.js.bak (this is your backup).
-6. Copy the **enderer-hook.js** file from this project into that pp folder and rename it to **index.js**.
-7. Open the newly renamed index.js in a text editor (like Notepad), scroll to the very bottom, add a new line, and append exactly this text: equire('@z-app/core');
+2. Open Task Manager and ensure `SonyMusicCenterSMTC.exe` is completely closed (if it was running).
+3. Copy **`SonyMusicCenterSMTC.exe`** to your Sony Music Center installation directory (usually `C:\Program Files (x86)\Sony\Music Center\`).
+4. Navigate to `C:\Program Files (x86)\Sony\Music Center\resources\app\`.
+5. Rename the existing `index.js` to `index.js.bak` (this is your backup).
+6. Copy the **`renderer-hook.js`** file from this project into that `app` folder and rename it to **`index.js`**.
+7. Open the newly renamed `index.js` in a text editor (like Notepad), scroll to the very bottom, add a new line, and append exactly this text: `require('@z-app/core');`
 8. Save the file and start Sony Music Center!
 
 ## Architecture
@@ -46,3 +46,4 @@ If you wish to remove the patch:
 2. Delete the hooked `index.js`.
 3. Rename the original `index.js.bak` back to `index.js`.
 4. Delete `SonyMusicCenterSMTC.exe` from the main installation folder.
+

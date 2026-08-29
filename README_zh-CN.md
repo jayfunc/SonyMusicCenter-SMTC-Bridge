@@ -22,15 +22,15 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 
 
 ### 手动安装（如果脚本闪退或失败）
-如果你的电脑上 Install.bat 一闪就没了（通常是因为杀毒软件拦截或者系统权限缺陷的问题），你可以手动安装：
+如果你的电脑上 `Install.bat` 一闪就没了（通常是因为杀毒软件拦截或者系统权限缺陷的问题），你可以手动安装：
 
 1. 彻底关闭 **Sony Music Center**。
-2. 打开任务管理器，确保 SonyMusicCenterSMTC.exe 后台进程已经关闭（如果有的话）。
-3. 把本项目里的 **SonyMusicCenterSMTC.exe** 复制到安装目录下（默认是 C:\Program Files (x86)\Sony\Music Center\）。
-4. 打开目录 C:\Program Files (x86)\Sony\Music Center\resources\app\。
-5. 把里面原来的 index.js 重命名为 index.js.bak 作为备份。
-6. 把本项目里的 **enderer-hook.js** 复制到这个 pp 目录下，并将其重命名为 **index.js**。
-7. 用记事本打开这个新的 index.js，滚动到最底部，另起一行并添加这句代码：equire('@z-app/core');
+2. 打开任务管理器，确保 `SonyMusicCenterSMTC.exe` 后台进程已经关闭（如果有的话）。
+3. 把本项目里的 **`SonyMusicCenterSMTC.exe`** 复制到安装目录下（默认是 `C:\Program Files (x86)\Sony\Music Center\`）。
+4. 打开目录 `C:\Program Files (x86)\Sony\Music Center\resources\app\`。
+5. 把里面原来的 `index.js` 重命名为 `index.js.bak` 作为备份。
+6. 把本项目里的 **`renderer-hook.js`** 复制到这个 `app` 目录下，并将其重命名为 **`index.js`**。
+7. 用记事本打开这个新的 `index.js`，滚动到最底部，另起一行并添加这句代码：`require('@z-app/core');`
 8. 保存文件，重新打开 Sony Music Center 即可！
 
 ## 架构原理
@@ -46,4 +46,5 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 2. 将里面那个被修改过的 `index.js` 文件直接删除。
 3. 把旁边的 `index.js.bak` 文件重命名回 `index.js`。
 4. 打开 `C:\Program Files (x86)\Sony\Music Center\` 主目录，删除 `SonyMusicCenterSMTC.exe` 即可。
+
 
