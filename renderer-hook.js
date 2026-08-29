@@ -5,7 +5,7 @@ const http = require('http');
 
 let smtcProc;
 try {
-    const bridgePath = path.join(process.resourcesPath, '..', 'SmtcBridge.exe');
+    const bridgePath = path.join(process.resourcesPath, '..', 'SonyMusicCenterSMTC.exe');
     smtcProc = cp.spawn(bridgePath, [], { detached: false, windowsHide: true });
 } catch (e) {}
 

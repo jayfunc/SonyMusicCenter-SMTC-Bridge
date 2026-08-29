@@ -22,8 +22,9 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 ## Architecture
 
 This project consists of two components:
-1. **enderer-hook.js:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
-2. **SmtcBridge.cs:** A native C# WinRT executable that instantiates a MediaPlayer and a virtual MediaStreamSource to perfectly control the Windows OS timeline without UI glitches.
+1. **
+enderer-hook.js:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
+2. **SonyMusicCenterSMTC.cs:** A native C# WinRT executable that instantiates a MediaPlayer and a virtual MediaStreamSource to perfectly control the Windows OS timeline without UI glitches.
 
 ## Uninstallation
 
@@ -31,4 +32,4 @@ If you wish to remove the patch:
 1. Navigate to C:\Program Files (x86)\Sony\Music Center\resources\app\.
 2. Delete the hooked index.js.
 3. Rename the original index.js.bak back to index.js.
-4. Delete SmtcBridge.exe from the main installation folder.
+4. Delete SonyMusicCenterSMTC.exe from the main installation folder.

@@ -11,7 +11,7 @@ if %errorLevel% == 0 (
 )
 
 cd /d "%~dp0"
-echo Compiling SmtcBridge.cs...
+echo Compiling SonyMusicCenterSMTC.cs...
 set CSC="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
 if not exist %CSC% (
     echo .NET Framework compiler not found!
@@ -19,9 +19,9 @@ if not exist %CSC% (
     exit /b
 )
 
-%CSC% /nologo /target:winexe /reference:"C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.26100.0\Windows.winmd" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.Extensions.dll" SmtcBridge.cs
+%CSC% /nologo /target:winexe /reference:"C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.26100.0\Windows.winmd" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.Extensions.dll" SonyMusicCenterSMTC.cs
 
-if not exist SmtcBridge.exe (
+if not exist SonyMusicCenterSMTC.exe (
     echo Compilation failed!
     pause
     exit /b
@@ -29,7 +29,7 @@ if not exist SmtcBridge.exe (
 
 echo Closing Sony Music Center and Bridge...
 taskkill /F /IM "Music Center.exe" /T >nul 2>&1
-taskkill /F /IM SmtcBridge.exe /T >nul 2>&1
+taskkill /F /IM SonyMusicCenterSMTC.exe /T >nul 2>&1
 
 set "APP_DIR=C:\Program Files (x86)\Sony\Music Center"
 if not exist "%APP_DIR%" (
@@ -38,8 +38,8 @@ if not exist "%APP_DIR%" (
     exit /b
 )
 
-echo Installing SmtcBridge.exe...
-copy /Y SmtcBridge.exe "%APP_DIR%\SmtcBridge.exe"
+echo Installing SonyMusicCenterSMTC.exe...
+copy /Y SonyMusicCenterSMTC.exe "%APP_DIR%\SonyMusicCenterSMTC.exe"
 
 set "INDEX_JS=%APP_DIR%\resources\app\index.js"
 if not exist "%INDEX_JS%.bak" (
