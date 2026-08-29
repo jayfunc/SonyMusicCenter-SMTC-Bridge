@@ -25,12 +25,7 @@ taskkill /F /IM "Music Center.exe" /T >nul 2>&1
 taskkill /F /IM SonyMusicCenterSMTC.exe /T >nul 2>&1
 
 set "APP_DIR=C:\Program Files (x86)\Sony\Music Center"
-if not exist "%APP_DIR%" (
-    echo [ERROR] Sony Music Center not found at %APP_DIR%
-    echo [错误] 找不到 Sony Music Center 安装目录：%APP_DIR%
-    pause
-    exit /b
-)
+if not exist "%APP_DIR%" goto err_dir
 
 echo Installing SonyMusicCenterSMTC.exe... / 正在安装桥接程序...
 copy /Y SonyMusicCenterSMTC.exe "%APP_DIR%\SonyMusicCenterSMTC.exe" >nul
@@ -56,3 +51,10 @@ echo [成功] 安装完成！现在您可以正常启动 Sony Music Center 了。
 echo ==============================================================
 echo.
 pause
+exit /b
+
+:err_dir
+echo [ERROR] Sony Music Center not found at "%APP_DIR%"
+echo [错误] 找不到 Sony Music Center 安装目录："%APP_DIR%"
+pause
+exit /b
