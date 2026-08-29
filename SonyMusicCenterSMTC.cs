@@ -22,6 +22,11 @@ class SmtcServer
     [MTAThread]
     static void Main()
     {
+        try {
+            foreach (var f in Directory.GetFiles(Path.GetTempPath(), "music_center_cover_*.jpg")) {
+                File.Delete(f);
+            }
+        } catch {}
         try { Run(); }
         catch (Exception e) { File.WriteAllText(Path.Combine(Path.GetTempPath(), "smtc_err.txt"), e.ToString()); }
     }
@@ -121,7 +126,7 @@ class SmtcServer
                                     int comma = cover.IndexOf(',');
                                     if (comma != -1) {
                                         byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
-                                        string tmpImg = Path.Combine(Path.GetTempPath(), "music_center_cover.jpg");
+                                        string tmpImg = Path.Combine(Path.GetTempPath(), "music_center_cover_" + Guid.NewGuid().ToString() + ".jpg");
                                         File.WriteAllBytes(tmpImg, imgData);
                                         props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri("file:///" + tmpImg.Replace('\\', '/')));
                                     }
@@ -179,3 +184,4 @@ class SmtcServer
         }
     }
 }
+
