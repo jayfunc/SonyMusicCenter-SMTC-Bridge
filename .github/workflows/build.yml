@@ -1,0 +1,31 @@
+name: Build C# Bridge
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Developer Command Prompt
+      uses: ilammy/msvc-dev-cmd@v1
+
+    - name: Compile C# Source
+      run: |
+        # Find the latest Windows 10 SDK path
+        $sdkPath = (Get-ChildItem -Path "C:\Program Files (x86)\Windows Kits\10\UnionMetadata\" -Directory | Sort-Object Name -Descending | Select-Object -First 1).FullName
+        $winmd = Join-Path $sdkPath "Windows.winmd"
+        
+        csc.exe /nologo /target:winexe /reference:"$winmd" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\System.Runtime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.Extensions.dll" /out:SonyMusicCenterSMTC.exe SonyMusicCenterSMTC.cs
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: SonyMusicCenterSMTC-Executable
+        path: SonyMusicCenterSMTC.exe

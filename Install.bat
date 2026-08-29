@@ -11,18 +11,9 @@ if %errorLevel% == 0 (
 )
 
 cd /d "%~dp0"
-echo Compiling SonyMusicCenterSMTC.cs...
-set CSC="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
-if not exist %CSC% (
-    echo .NET Framework compiler not found!
-    pause
-    exit /b
-)
-
-%CSC% /nologo /target:winexe /reference:"C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.26100.0\Windows.winmd" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.Extensions.dll" SonyMusicCenterSMTC.cs
 
 if not exist SonyMusicCenterSMTC.exe (
-    echo Compilation failed!
+    echo SonyMusicCenterSMTC.exe not found! Please download the full release.
     pause
     exit /b
 )
@@ -39,12 +30,12 @@ if not exist "%APP_DIR%" (
 )
 
 echo Installing SonyMusicCenterSMTC.exe...
-copy /Y SonyMusicCenterSMTC.exe "%APP_DIR%\SonyMusicCenterSMTC.exe"
+copy /Y SonyMusicCenterSMTC.exe "%APP_DIR%\SonyMusicCenterSMTC.exe" >nul
 
 set "INDEX_JS=%APP_DIR%\resources\app\index.js"
 if not exist "%INDEX_JS%.bak" (
     echo Backing up original index.js...
-    copy /Y "%INDEX_JS%" "%INDEX_JS%.bak"
+    copy /Y "%INDEX_JS%" "%INDEX_JS%.bak" >nul
 )
 
 echo Patching index.js...

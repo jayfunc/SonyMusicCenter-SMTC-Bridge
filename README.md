@@ -1,5 +1,5 @@
 # Sony Music Center SMTC Bridge
-[简体中文版说明 (Chinese Version)](README_zh-CN.md)
+[绠�浣撲腑鏂囩増璇存槑 (Chinese Version)](README_zh-CN.md)
 
 A native Windows 10/11 System Media Transport Controls (SMTC) bridge for the desktop version of Sony Music Center for PC.
 
@@ -17,13 +17,14 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 1. Close Sony Music Center if it is running.
 2. Clone or download this repository.
 3. Right-click on **\Install.bat\** and select **Run as administrator**.
-   *(The script automatically compiles the C# bridge into an executable and safely patches the app's startup scripts).*
+   *(The script safely copies the bridge executable and patches the app's startup scripts).*
 4. Open Sony Music Center and play a song!
 
 ## Architecture
 
 This project consists of two components:
-1. **\enderer-hook.js\:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
+1. **\
+enderer-hook.js\:** An injected Electron script that scrapes the DOM and intercepts media key events. It establishes a local HTTP POST connection to bypass strict Electron Content-Security-Policies (CSP).
 2. **\SonyMusicCenterSMTC.cs\:** A native C# WinRT executable that instantiates a \MediaPlayer\ and a virtual \MediaStreamSource\ to perfectly control the Windows OS timeline without UI glitches.
 
 ## Uninstallation
