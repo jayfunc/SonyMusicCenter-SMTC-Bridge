@@ -1,0 +1,59 @@
+@echo off
+net session >nul 2>&1
+if %errorLevel% == 0 (
+    echo Administrator privileges confirmed.
+) else (
+    echo Set UAC = CreateObject^("Shell.Application"^) > "%temp%\getadmin.vbs"
+    echo UAC.ShellExecute "%~s0", "", "", "runas", 1 >> "%temp%\getadmin.vbs"
+    "%temp%\getadmin.vbs"
+    del "%temp%\getadmin.vbs"
+    exit /B
+)
+
+cd /d "%~dp0"
+echo Compiling SmtcBridge.cs...
+set CSC="C:\Windows\Microsoft.NET\Framework64\v4.0.30319\csc.exe"
+if not exist %CSC% (
+    echo .NET Framework compiler not found!
+    pause
+    exit /b
+)
+
+%CSC% /nologo /target:winexe /reference:"C:\Program Files (x86)\Windows Kits\10\UnionMetadata\10.0.26100.0\Windows.winmd" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Runtime.WindowsRuntime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.dll" /reference:"C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.2\Facades\System.Runtime.InteropServices.WindowsRuntime.dll" /reference:"C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Web.Extensions.dll" SmtcBridge.cs
+
+if not exist SmtcBridge.exe (
+    echo Compilation failed!
+    pause
+    exit /b
+)
+
+echo Closing Sony Music Center and Bridge...
+taskkill /F /IM "Music Center.exe" /T >nul 2>&1
+taskkill /F /IM SmtcBridge.exe /T >nul 2>&1
+
+set "APP_DIR=C:\Program Files (x86)\Sony\Music Center"
+if not exist "%APP_DIR%" (
+    echo Sony Music Center not found at %APP_DIR%
+    pause
+    exit /b
+)
+
+echo Installing SmtcBridge.exe...
+copy /Y SmtcBridge.exe "%APP_DIR%\SmtcBridge.exe"
+
+set "INDEX_JS=%APP_DIR%\resources\app\index.js"
+if not exist "%INDEX_JS%.bak" (
+    echo Backing up original index.js...
+    copy /Y "%INDEX_JS%" "%INDEX_JS%.bak"
+)
+
+echo Patching index.js...
+copy /Y renderer-hook.js "%temp%\index.js.tmp" >nul
+echo. >> "%temp%\index.js.tmp"
+echo 'use strict'; >> "%temp%\index.js.tmp"
+echo require('@z-app/core'); >> "%temp%\index.js.tmp"
+copy /Y "%temp%\index.js.tmp" "%INDEX_JS%" >nul
+del "%temp%\index.js.tmp"
+
+echo Installation Complete! You can now start Sony Music Center.
+pause
