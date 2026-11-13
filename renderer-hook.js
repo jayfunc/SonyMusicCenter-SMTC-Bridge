@@ -73,6 +73,7 @@ electron.app.on('web-contents-created', (e, wc) => {
                     let lastTitle = '';
                     let lastState = '';
                     let lastPosition = 0;
+                    let lastDuration = 0;
                     let lastUpdateTime = Date.now();
                     let lastCoverUrl = '';
                     let lastCoverData = '';
@@ -110,8 +111,10 @@ electron.app.on('web-contents-created', (e, wc) => {
                         let duration = '0';
                         const slider = document.getElementById('player-position-slider');
                         if (slider) {
-                            position = (parseFloat(slider.value) / 1000).toString();
-                            duration = (parseFloat(slider.max) / 1000).toString();
+                            const posMs = parseFloat(slider.value);
+                            const durMs = parseFloat(slider.max);
+                            position = (isFinite(posMs) ? posMs / 1000 : 0).toString();
+                            duration = (isFinite(durMs) ? durMs / 1000 : 0).toString();
                         }
 
                         let coverUrl = '';
@@ -150,6 +153,8 @@ electron.app.on('web-contents-created', (e, wc) => {
                         const stateChanged = (isPlaying !== (lastState === 'playing'));
                         const coverChanged = (coverUrl !== lastCoverUrl) || titleChanged;
                         const seeked = Math.abs(currentPos - expectedPos) > 3;
+                        const currentDur = parseFloat(duration);
+                        const durationChanged = (currentDur > 0 && Math.abs(currentDur - lastDuration) > 1);
 
                         const sendUpdate = (covData) => {
                             const payload = { title: title, artist: artist, album: album, state: lastState, position: position, duration: duration, cover: covData };
@@ -157,10 +162,11 @@ electron.app.on('web-contents-created', (e, wc) => {
                             console.log("SMTC_UPDATE|" + JSON.stringify(payload));
                         };
 
-                        if (titleChanged || stateChanged || coverChanged || seeked) {
+                        if (titleChanged || stateChanged || coverChanged || seeked || durationChanged) {
                             lastTitle = title;
                             lastState = isPlaying ? 'playing' : 'paused';
                             lastPosition = currentPos;
+                            lastDuration = currentDur;
                             lastUpdateTime = Date.now();
                             
                             if (coverChanged) {
