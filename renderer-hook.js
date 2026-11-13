@@ -116,28 +116,68 @@ electron.app.on('web-contents-created', (e, wc) => {
 
                         let coverUrl = '';
                         let coverImgEl = null;
-                        const els = document.querySelectorAll('img, div');
-                        els.forEach(el => {
-                            let u = '';
-                            if (el.tagName && el.tagName.toLowerCase() === 'img') {
-                                u = el.src;
-                            } else {
-                                const bg = window.getComputedStyle(el).backgroundImage;
-                                if (bg && bg !== 'none' && bg.includes('url(')) {
-                                    const match = bg.match(/url\(["']?(.*?)["']?\)/);
-                                    if (match && match[1]) u = match[1];
-                                }
-                            }
-                            if (u && !u.includes('.svg') && !u.includes('icon') && !u.includes('default')) {
-                                const cn = (typeof el.className === 'string') ? el.className.toLowerCase() : '';
-                                if (cn.includes('artwork') || cn.includes('cover') || cn.includes('album') || cn.includes('jacket') || cn.includes('player') || u.startsWith('blob:')) {
-                                    coverUrl = u;
-                                    if (el.tagName && el.tagName.toLowerCase() === 'img') {
-                                        coverImgEl = el;
+                        const pickCoverIn = (root) => {
+                            let best = null;
+                            let bestArea = 0;
+                            const cands = root.querySelectorAll('img, div');
+                            cands.forEach(el => {
+                                let u = '';
+                                if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                                    u = el.src;
+                                } else {
+                                    const bg = window.getComputedStyle(el).backgroundImage;
+                                    if (bg && bg !== 'none' && bg.includes('url(')) {
+                                        const match = bg.match(/url\(["']?(.*?)["']?\)/);
+                                        if (match && match[1]) u = match[1];
                                     }
                                 }
+                                if (!u || u.includes('.svg') || u.includes('icon') || u.includes('default')) return;
+                                const r = el.getBoundingClientRect();
+                                if (r.width < 24 || r.height < 24) return;
+                                const area = r.width * r.height;
+                                if (area > bestArea) {
+                                    bestArea = area;
+                                    best = { u: u, el: el };
+                                }
+                            });
+                            return best;
+                        };
+                        let scope = playBtn;
+                        for (let i = 0; i < 10 && scope; i++) {
+                            if (scope.querySelector && scope.querySelector('.player-info-text[data-type="title"]')) break;
+                            scope = scope.parentElement;
+                        }
+                        let picked = null;
+                        if (scope) picked = pickCoverIn(scope);
+                        if (picked) {
+                            coverUrl = picked.u;
+                            if (picked.el.tagName && picked.el.tagName.toLowerCase() === 'img') {
+                                coverImgEl = picked.el;
                             }
-                        });
+                        } else {
+                            const els = document.querySelectorAll('img, div');
+                            els.forEach(el => {
+                                let u = '';
+                                if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                                    u = el.src;
+                                } else {
+                                    const bg = window.getComputedStyle(el).backgroundImage;
+                                    if (bg && bg !== 'none' && bg.includes('url(')) {
+                                        const match = bg.match(/url\(["']?(.*?)["']?\)/);
+                                        if (match && match[1]) u = match[1];
+                                    }
+                                }
+                                if (u && !u.includes('.svg') && !u.includes('icon') && !u.includes('default')) {
+                                    const cn = (typeof el.className === 'string') ? el.className.toLowerCase() : '';
+                                    if (cn.includes('artwork') || cn.includes('cover') || cn.includes('album') || cn.includes('jacket') || cn.includes('player') || u.startsWith('blob:')) {
+                                        coverUrl = u;
+                                        if (el.tagName && el.tagName.toLowerCase() === 'img') {
+                                            coverImgEl = el;
+                                        }
+                                    }
+                                }
+                            });
+                        }
 
                         const currentPos = parseFloat(position);
                         const timeSinceLastUpdate = (Date.now() - lastUpdateTime) / 1000;
