@@ -68,19 +68,21 @@ class SmtcServer
 
                     double durSec = 0;
                     double.TryParse(duration, out durSec);
+                    if (!(durSec > 0)) durSec = 0;
                     double posSec = 0;
                     double.TryParse(position, out posSec);
 
-                    bool recreateSource = player.Source == null || Math.Abs(durSec - lastDuration) > 1.0;
+                    bool recreateSource = player.Source == null || (durSec > 0 && Math.Abs(durSec - lastDuration) > 1.0);
                     MediaPlaybackItem newItem = null;
 
                     if (recreateSource)
                     {
-                        lastDuration = durSec;
+                        if (durSec > 0) lastDuration = durSec;
                         var desc = new AudioStreamDescriptor(AudioEncodingProperties.CreatePcm(44100, 2, 16));
                         var mss = new MediaStreamSource(desc);
                         mss.CanSeek = true;
-                        mss.Duration = TimeSpan.FromSeconds(durSec > 0 ? durSec : 300);
+                        if (durSec > 0)
+                            mss.Duration = TimeSpan.FromSeconds(durSec);
 
                         mss.Starting += (s, e) =>
                         {
