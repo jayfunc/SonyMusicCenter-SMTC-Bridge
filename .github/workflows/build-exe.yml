@@ -1,0 +1,113 @@
+name: Build EXE
+
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - 'SonyMusicCenterSMTC.cs'
+      - 'AssemblyInfo.cs'
+      - 'MusicCenter.ico'
+      - '.github/workflows/build-exe.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-exe
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Compile and publish
+    runs-on: windows-2022
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Compile SonyMusicCenterSMTC.exe
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+
+          $pf86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+          if (-not $pf86) { throw 'Program Files (x86) was not found.' }
+
+          $vsWhere = Join-Path $pf86 'Microsoft Visual Studio\Installer\vswhere.exe'
+          if (-not (Test-Path $vsWhere)) { throw 'vswhere.exe was not found.' }
+          $vsDir = & $vsWhere -latest -requires Microsoft.Component.MSBuild -property installationPath
+          if (-not $vsDir) { throw 'Visual Studio with MSBuild was not found.' }
+          $csc = Join-Path $vsDir 'MSBuild\Current\Bin\Roslyn\csc.exe'
+          if (-not (Test-Path $csc)) { throw "csc.exe was not found at $csc" }
+
+          $sdkRoot = Join-Path $pf86 'Windows Kits\10'
+          $winmd = Get-ChildItem -Path (Join-Path $sdkRoot 'UnionMetadata') -Filter 'Windows.winmd' -Recurse -ErrorAction SilentlyContinue |
+            Where-Object { $_.Directory.Name -match '^\d+\.' } |
+            Sort-Object FullName -Descending |
+            Select-Object -First 1
+          if (-not $winmd) { throw 'Versioned Windows.winmd was not found in the Windows SDK.' }
+
+          $fxRoot = Join-Path $pf86 'Reference Assemblies\Microsoft\Framework\.NETFramework\v4.8'
+          if (-not (Test-Path $fxRoot)) { throw '.NET Framework 4.8 reference assemblies were not found.' }
+
+          $runtimeWinmd = Join-Path $fxRoot 'Facades\System.Runtime.WindowsRuntime.dll'
+          if (-not (Test-Path $runtimeWinmd)) {
+            $runtimeWinmd = 'C:\Windows\Microsoft.NET\Framework64\v4.0.30319\Facades\System.Runtime.WindowsRuntime.dll'
+          }
+
+          $references = @(
+            (Join-Path $fxRoot 'mscorlib.dll'),
+            (Join-Path $fxRoot 'System.dll'),
+            (Join-Path $fxRoot 'System.Core.dll'),
+            (Join-Path $fxRoot 'System.Web.Extensions.dll'),
+            $runtimeWinmd,
+            (Join-Path $fxRoot 'Facades\System.Runtime.dll'),
+            (Join-Path $fxRoot 'Facades\System.Runtime.InteropServices.WindowsRuntime.dll'),
+            $winmd.FullName
+          ) | Where-Object { Test-Path $_ } | Select-Object -Unique
+
+          $compilerArgs = @(
+            '/nologo',
+            '/noconfig',
+            '/nostdlib+',
+            '/target:winexe',
+            '/platform:anycpu',
+            '/optimize+',
+            '/debug-'
+          )
+          if (Test-Path 'MusicCenter.ico') {
+            $compilerArgs += '/win32icon:MusicCenter.ico'
+          }
+          $referenceArgs = @($references | ForEach-Object { "/reference:$_" })
+          $compilerArgs = $compilerArgs + $referenceArgs + @(
+            '/out:SonyMusicCenterSMTC.exe',
+            'SonyMusicCenterSMTC.cs',
+            'AssemblyInfo.cs'
+          )
+
+          & $csc @compilerArgs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+          Get-Item 'SonyMusicCenterSMTC.exe' | Select-Object Name, Length
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonyMusicCenterSMTC
+          path: SonyMusicCenterSMTC.exe
+          if-no-files-found: error
+
+      - name: Publish to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Latest auto build
+          target_commitish: ${{ github.sha }}
+          body: |
+            Automatically built from `${{ github.sha }}` by GitHub Actions.
+
+            Direct EXE download: https://github.com/${{ github.repository }}/releases/download/latest/SonyMusicCenterSMTC.exe
+          files: SonyMusicCenterSMTC.exe
+          overwrite_files: true
+          make_latest: true

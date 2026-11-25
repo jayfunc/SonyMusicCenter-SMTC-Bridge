@@ -1,6 +1,14 @@
 ﻿# Sony Music Center SMTC Bridge
 [简体中文版说明 (Chinese Version)](README_zh-CN.md)
 
+[![Build EXE](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/actions/workflows/build-exe.yml/badge.svg)](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/actions/workflows/build-exe.yml)
+
+## Download
+- **[Download the latest `SonyMusicCenterSMTC.exe`](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/releases/download/latest/SonyMusicCenterSMTC.exe)**
+- Browse all automatic builds: [Releases](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/releases)
+
+The executable is compiled automatically by GitHub Actions whenever the source changes.
+
 A native Windows 10/11 System Media Transport Controls (SMTC) bridge for the desktop version of Sony Music Center for PC.
 
 Sony Music Center for PC is an Electron-based application, but due to older Electron versions and missing flags, it does not natively interface with the Windows System Media Transport Controls (the volume OSD media popup). This project injects a lightweight background bridge to provide full native OS integration.
@@ -15,7 +23,7 @@ Sony Music Center for PC is an Electron-based application, but due to older Elec
 ## Installation
 
 1. Close Sony Music Center if it is running.
-2. Clone or download this repository.
+2. Download this repository and the latest [`SonyMusicCenterSMTC.exe`](#download), keeping `Install.bat`, `renderer-hook.js` and the EXE in the same folder.
 3. Right-click on **`Install.bat`** and select **Run as administrator**.
    *(The script safely copies the bridge executable and patches the app's startup scripts).*
 4. Open Sony Music Center and play a song!
@@ -26,7 +34,7 @@ If `Install.bat` flashes and closes immediately (e.g., due to antivirus restrict
 
 1. Close **Sony Music Center**.
 2. Open Task Manager and ensure `SonyMusicCenterSMTC.exe` is completely closed (if it was running).
-3. Copy **`SonyMusicCenterSMTC.exe`** to your Sony Music Center installation directory (usually `C:\Program Files (x86)\Sony\Music Center\`).
+3. Copy the latest **`SonyMusicCenterSMTC.exe`** (see [Download](#download)) to your Sony Music Center installation directory (usually `C:\Program Files (x86)\Sony\Music Center\`).
 4. Navigate to `C:\Program Files (x86)\Sony\Music Center\resources\app\`.
 5. Rename the existing `index.js` to `index.js.bak` (this is your backup).
 6. Copy the **`renderer-hook.js`** file from this project to your **Desktop** (or any other folder where you have write access).

@@ -1,6 +1,14 @@
 ﻿# Sony Music Center SMTC Bridge
 [English Version](README.md)
 
+[![自动构建 EXE](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/actions/workflows/build-exe.yml/badge.svg)](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/actions/workflows/build-exe.yml)
+
+## 下载
+- **[下载最新版 `SonyMusicCenterSMTC.exe`](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/releases/download/latest/SonyMusicCenterSMTC.exe)**
+- 查看所有自动构建：[Releases](https://github.com/jayfunc/SonyMusicCenter-SMTC-Bridge/releases)
+
+每次源码更新后，GitHub Actions 都会自动重新编译该可执行文件。
+
 专为桌面版 Sony Music Center for PC 打造的 Windows 10/11 原生系统媒体控制（SMTC）桥接插件。
 
 Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其 Electron 版本较老且缺少必要的启动参数，无法原生支持 Windows 系统自带的媒体控制悬浮窗（SMTC）。本项目通过注入一个轻量级的后台桥接服务，为该软件赋予了完美的原生系统级整合能力。
@@ -15,7 +23,7 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 ## 安装方法
 
 1. 请先彻底关闭正在运行的 Sony Music Center。
-2. 克隆或下载本仓库的所有文件。
+2. 下载本仓库，并下载上方链接中最新的 `SonyMusicCenterSMTC.exe`，确保 `Install.bat`、`renderer-hook.js` 和该 EXE 放在同一文件夹中。
 3. 右键点击 **`Install.bat`**，选择 **“以管理员身份运行”**。
    *(该脚本会自动将桥接程序复制到安装目录，并安全、自动地对原软件的启动脚本进行补丁注入)。*
 4. 打开 Sony Music Center，随便播放一首歌，按一下键盘的音量键或者媒体键，享受原生体验！
@@ -26,7 +34,7 @@ Sony Music Center for PC 是一款基于 Electron 开发的应用，但由于其
 
 1. 彻底关闭 **Sony Music Center**。
 2. 打开任务管理器，确保 `SonyMusicCenterSMTC.exe` 后台进程已经关闭（如果有的话）。
-3. 把本项目里的 **`SonyMusicCenterSMTC.exe`** 复制到安装目录下（默认是 `C:\Program Files (x86)\Sony\Music Center\`）。
+3. 将最新的 **`SonyMusicCenterSMTC.exe`**（见[下载](#下载)）复制到安装目录下（默认是 `C:\Program Files (x86)\Sony\Music Center\`）。
 4. 打开目录 `C:\Program Files (x86)\Sony\Music Center\resources\app\`。
 5. 把里面原来的 `index.js` 重命名为 `index.js.bak` 作为备份。
 6. 把本项目里的 **`renderer-hook.js`** 复制到你的 **桌面**（或其他任意你有编辑权限的文件夹）。
