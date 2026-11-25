@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -19,6 +20,7 @@ class SmtcServer
     static TimeSpan currentVirtualPos = TimeSpan.Zero;
     static JavaScriptSerializer js = new JavaScriptSerializer();
     static IRandomAccessStream lastThumbStream = null;
+    static ConcurrentQueue<string> commandQueue = new ConcurrentQueue<string>();
 
     static void Main()
     {
@@ -36,6 +38,15 @@ class SmtcServer
     {
         player = new MediaPlayer();
         player.CommandManager.IsEnabled = true;
+        player.CommandManager.PlayBehavior.EnablingRule = MediaCommandEnablingRule.Always;
+        player.CommandManager.PauseBehavior.EnablingRule = MediaCommandEnablingRule.Always;
+        player.CommandManager.NextBehavior.EnablingRule = MediaCommandEnablingRule.Always;
+        player.CommandManager.PreviousBehavior.EnablingRule = MediaCommandEnablingRule.Always;
+
+        player.CommandManager.PlayReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("play"); };
+        player.CommandManager.PauseReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("pause"); };
+        player.CommandManager.NextReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("next"); };
+        player.CommandManager.PreviousReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("prev"); };
 
         var listener = new HttpListener();
         listener.Prefixes.Add("http://127.0.0.1:9999/");
@@ -185,7 +196,11 @@ class SmtcServer
                 }
                 else if (req.Url.AbsolutePath == "/poll" && req.HttpMethod == "GET")
                 {
-                    string command = "";
+                    string command;
+                    if (!commandQueue.TryDequeue(out command))
+                    {
+                        command = "";
+                    }
                     res.AddHeader("Access-Control-Allow-Origin", "*");
                     var responseBytes = Encoding.UTF8.GetBytes(command);
                     res.ContentLength64 = responseBytes.Length;
@@ -207,5 +222,3 @@ class SmtcServer
         }
     }
 }
-
-
