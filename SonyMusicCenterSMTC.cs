@@ -18,6 +18,7 @@ class SmtcServer
     static double lastDuration = 0;
     static TimeSpan currentVirtualPos = TimeSpan.Zero;
     static JavaScriptSerializer js = new JavaScriptSerializer();
+    static IRandomAccessStream lastThumbStream = null;
 
     static void Main()
     {
@@ -117,22 +118,46 @@ class SmtcServer
                             if (artist != null) props.MusicProperties.Artist = artist;
                             if (album != null) props.MusicProperties.AlbumTitle = album;
                             
-                            if (!string.IsNullOrEmpty(cover)) {
-                                try {
+                            try {
+                                if (!string.IsNullOrEmpty(cover)) {
+                                    byte[] imgData = null;
                                     if (cover.StartsWith("data:")) {
                                         int comma = cover.IndexOf(',');
-                                        if (comma != -1) {
-                                            byte[] imgData = Convert.FromBase64String(cover.Substring(comma + 1));
-                                            var stream = new InMemoryRandomAccessStream();
-                                            stream.WriteAsync(imgData.AsBuffer()).AsTask().Wait();
-                                            stream.Seek(0);
-                                            props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromStream(stream);
-                                        }
-                                    } else {
+                                        if (comma != -1) imgData = Convert.FromBase64String(cover.Substring(comma + 1));
+                                    } else if (cover.StartsWith("file://")) {
+                                        string clean = cover;
+                                        int q = clean.IndexOf('?');
+                                        if (q >= 0) clean = clean.Substring(0, q);
+                                        int h = clean.IndexOf('#');
+                                        if (h >= 0) clean = clean.Substring(0, h);
+                                        imgData = File.ReadAllBytes(new Uri(clean).LocalPath);
+                                    } else if (cover.StartsWith("http")) {
                                         props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromUri(new Uri(cover));
+                                    } else {
+                                        string clean2 = cover;
+                                        int q2 = clean2.IndexOf('?');
+                                        if (q2 >= 0) clean2 = clean2.Substring(0, q2);
+                                        int h2 = clean2.IndexOf('#');
+                                        if (h2 >= 0) clean2 = clean2.Substring(0, h2);
+                                        if (File.Exists(clean2)) imgData = File.ReadAllBytes(clean2);
                                     }
-                                } catch {}
-                            }
+                                    if (imgData != null && imgData.Length > 0) {
+                                        try { File.WriteAllBytes(Path.Combine(Path.GetTempPath(), "music_center_cover_current.jpg"), imgData); } catch {}
+                                            var stream = new InMemoryRandomAccessStream();
+                                            var dwb = new DataWriter();
+                                            dwb.WriteBytes(imgData);
+                                            var wop = stream.WriteAsync(dwb.DetachBuffer());
+                                            while (wop.Status == Windows.Foundation.AsyncStatus.Started) System.Threading.Thread.Sleep(1);
+                                            wop.GetResults();
+                                            stream.Seek(0);
+                                        if (lastThumbStream != null) { try { lastThumbStream.Dispose(); } catch {} }
+                                        lastThumbStream = stream;
+                                        props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromStream(stream);
+                                    }
+                                } else {
+                                    props.Thumbnail = null;
+                                }
+                            } catch {}
                             item.ApplyDisplayProperties(props);
                         }
                     }
