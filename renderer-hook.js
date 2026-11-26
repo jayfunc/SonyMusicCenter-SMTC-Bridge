@@ -56,6 +56,68 @@ electron.app.on('web-contents-created', (e, wc) => {
                         const data = (raw || '').trim().toLowerCase();
                         if (!data) return;
 
+                        if (data.startsWith('seek:')) {
+                            const targetMs = parseInt(data.substring(5), 10);
+                            if (isFinite(targetMs) && targetMs >= 0) {
+                                const seekCode = `
+                                    (function() {
+                                        var targetMs = ${targetMs};
+                                        var slider = document.getElementById('player-position-slider');
+                                        if (!slider) return;
+                                        var maxMs = parseFloat(slider.max);
+                                        if (isFinite(maxMs) && maxMs > 0) {
+                                            targetMs = Math.max(0, Math.min(targetMs, maxMs));
+                                        }
+
+                                        var inputEl = (slider.tagName === 'INPUT')
+                                            ? slider
+                                            : (slider.querySelector ? slider.querySelector('input[type="range"]') : null);
+                                        if (!inputEl && slider.shadowRoot) {
+                                            inputEl = slider.shadowRoot.querySelector('input[type="range"]');
+                                        }
+
+                                        var targetEl = inputEl || slider;
+                                        var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+                                        if (targetEl.tagName === 'INPUT' && desc && desc.set) {
+                                            desc.set.call(targetEl, String(targetMs));
+                                        } else {
+                                            targetEl.value = targetMs;
+                                        }
+                                        ['input', 'change', 'value-changed'].forEach(function(evtName) {
+                                            targetEl.dispatchEvent(new Event(evtName, { bubbles: true, composed: true }));
+                                        });
+
+                                        setTimeout(function() {
+                                            var cur = parseFloat(slider.value);
+                                            if (isFinite(cur) && Math.abs(cur - targetMs) > 2500 && isFinite(maxMs) && maxMs > 0) {
+                                                var rect = slider.getBoundingClientRect();
+                                                if (rect && rect.width > 0 && rect.height > 0) {
+                                                    var ratio = Math.max(0, Math.min(1, targetMs / maxMs));
+                                                    var cx = rect.left + rect.width * ratio;
+                                                    var cy = rect.top + rect.height / 2;
+                                                    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function(type) {
+                                                        var Evt = (type.startsWith('pointer') && typeof PointerEvent !== 'undefined') ? PointerEvent : MouseEvent;
+                                                        slider.dispatchEvent(new Evt(type, {
+                                                            bubbles: true,
+                                                            cancelable: true,
+                                                            composed: true,
+                                                            view: window,
+                                                            clientX: cx,
+                                                            clientY: cy,
+                                                            button: 0,
+                                                            buttons: (type === 'pointerdown' || type === 'mousedown') ? 1 : 0
+                                                        }));
+                                                    });
+                                                }
+                                            }
+                                        }, 600);
+                                    })();
+                                `;
+                                wc.executeJavaScript(seekCode, true).catch(() => {});
+                            }
+                            return;
+                        }
+
                         let targetId = '';
                         if (data === 'play' || data === 'pause' || data === 'playpause') {
                             targetId = 'player-control-play-pause';
