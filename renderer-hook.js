@@ -63,64 +63,22 @@ electron.app.on('web-contents-created', (e, wc) => {
                                     (function() {
                                         var targetMs = ${targetMs};
                                         var slider = document.getElementById('player-position-slider');
-                                        if (!slider) return 'NO_SLIDER';
+                                        if (!slider) return;
                                         var maxMs = parseFloat(slider.max);
-                                        var beforeVal = slider.value;
                                         if (isFinite(maxMs) && maxMs > 0) {
                                             targetMs = Math.max(0, Math.min(targetMs, maxMs));
                                         }
-
-                                        var mode = '';
-                                        if (slider.tagName === 'INPUT') {
-                                            mode = 'native-input';
-                                            var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
-                                            if (desc && desc.set) desc.set.call(slider, String(targetMs));
-                                            else slider.value = String(targetMs);
-                                            slider.dispatchEvent(new Event('input', { bubbles: true }));
-                                            slider.dispatchEvent(new Event('change', { bubbles: true }));
+                                        var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+                                        if (desc && desc.set) {
+                                            desc.set.call(slider, String(targetMs));
                                         } else {
-                                            var rect = slider.getBoundingClientRect();
-                                            if (rect && rect.width > 0 && rect.height > 0 && isFinite(maxMs) && maxMs > 0) {
-                                                mode = 'pointer-click';
-                                                var ratio = Math.max(0, Math.min(1, targetMs / maxMs));
-                                                var cx = rect.left + rect.width * ratio;
-                                                var cy = rect.top + rect.height / 2;
-                                                ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach(function(type) {
-                                                    var Evt = (type.startsWith('pointer') && typeof PointerEvent !== 'undefined') ? PointerEvent : MouseEvent;
-                                                    slider.dispatchEvent(new Evt(type, {
-                                                        bubbles: true,
-                                                        cancelable: true,
-                                                        composed: true,
-                                                        view: window,
-                                                        clientX: cx,
-                                                        clientY: cy,
-                                                        button: 0,
-                                                        buttons: (type === 'pointerdown' || type === 'mousedown') ? 1 : 0
-                                                    }));
-                                                });
-                                            } else {
-                                                mode = 'hidden-no-rect';
-                                            }
+                                            slider.value = String(targetMs);
                                         }
-                                        return JSON.stringify({
-                                            mode: mode,
-                                            targetMs: targetMs,
-                                            beforeVal: beforeVal,
-                                            afterVal: slider.value,
-                                            max: slider.max,
-                                            tag: slider.tagName,
-                                            html: (slider.outerHTML || '').slice(0, 260)
-                                        });
+                                        slider.dispatchEvent(new Event('input', { bubbles: true }));
+                                        slider.dispatchEvent(new Event('change', { bubbles: true }));
                                     })();
                                 `;
-                                wc.executeJavaScript(seekCode, true).then(info => {
-                                    try {
-                                        require('fs').appendFileSync(
-                                            path.join(require('os').tmpdir(), 'smtc_seek_debug.log'),
-                                            `[${new Date().toISOString()}] raw=${data} -> ${info}\n`
-                                        );
-                                    } catch (e) {}
-                                }).catch(() => {});
+                                wc.executeJavaScript(seekCode, true).catch(() => {});
                             }
                             return;
                         }
