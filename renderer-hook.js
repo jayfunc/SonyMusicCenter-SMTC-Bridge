@@ -56,6 +56,33 @@ electron.app.on('web-contents-created', (e, wc) => {
                         const data = (raw || '').trim().toLowerCase();
                         if (!data) return;
 
+                        if (data.startsWith('seek:')) {
+                            const targetMs = parseInt(data.substring(5), 10);
+                            if (isFinite(targetMs) && targetMs >= 0) {
+                                const seekCode = `
+                                    (function() {
+                                        var targetMs = ${targetMs};
+                                        var slider = document.getElementById('player-position-slider');
+                                        if (!slider) return;
+                                        var maxMs = parseFloat(slider.max);
+                                        if (isFinite(maxMs) && maxMs > 0) {
+                                            targetMs = Math.max(0, Math.min(targetMs, maxMs));
+                                        }
+                                        var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value');
+                                        if (desc && desc.set) {
+                                            desc.set.call(slider, String(targetMs));
+                                        } else {
+                                            slider.value = String(targetMs);
+                                        }
+                                        slider.dispatchEvent(new Event('input', { bubbles: true }));
+                                        slider.dispatchEvent(new Event('change', { bubbles: true }));
+                                    })();
+                                `;
+                                wc.executeJavaScript(seekCode, true).catch(() => {});
+                            }
+                            return;
+                        }
+
                         let targetId = '';
                         if (data === 'play' || data === 'pause' || data === 'playpause') {
                             targetId = 'player-control-play-pause';
