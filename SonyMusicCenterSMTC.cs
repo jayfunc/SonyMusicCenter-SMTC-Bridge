@@ -49,6 +49,7 @@ class SmtcServer
         smtc.IsPauseEnabled = true;
         smtc.IsNextEnabled = true;
         smtc.IsPreviousEnabled = true;
+        smtc.PlaybackRate = 1.0;
         smtc.ButtonPressed += OnButtonPressed;
         smtc.PlaybackPositionChangeRequested += OnSeekRequested;
 
@@ -197,6 +198,7 @@ class SmtcServer
             smtc.IsPauseEnabled = true;
             smtc.IsNextEnabled = true;
             smtc.IsPreviousEnabled = true;
+            smtc.PlaybackRate = 1.0;
 
             if (state == "playing") smtc.PlaybackStatus = MediaPlaybackStatus.Playing;
             else if (state == "paused") smtc.PlaybackStatus = MediaPlaybackStatus.Paused;
