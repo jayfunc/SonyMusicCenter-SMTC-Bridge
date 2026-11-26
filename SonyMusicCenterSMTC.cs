@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Windows.Media;
 using Windows.Media.MediaProperties;
@@ -21,6 +22,8 @@ class SmtcServer
     static JavaScriptSerializer js = new JavaScriptSerializer();
     static IRandomAccessStream lastThumbStream = null;
     static ConcurrentQueue<string> commandQueue = new ConcurrentQueue<string>();
+    static long pendingSeekMs = -1;
+    static long lastSeekTicks = 0;
 
     static void Main()
     {
@@ -42,11 +45,33 @@ class SmtcServer
         player.CommandManager.PauseBehavior.EnablingRule = MediaCommandEnablingRule.Always;
         player.CommandManager.NextBehavior.EnablingRule = MediaCommandEnablingRule.Always;
         player.CommandManager.PreviousBehavior.EnablingRule = MediaCommandEnablingRule.Always;
+        player.CommandManager.PositionBehavior.EnablingRule = MediaCommandEnablingRule.Always;
 
         player.CommandManager.PlayReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("play"); };
         player.CommandManager.PauseReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("pause"); };
-        player.CommandManager.NextReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("next"); };
-        player.CommandManager.PreviousReceived += (s, e) => { e.Handled = true; commandQueue.Enqueue("prev"); };
+        player.CommandManager.NextReceived += (s, e) =>
+        {
+            e.Handled = true;
+            Interlocked.Exchange(ref pendingSeekMs, -1);
+            Interlocked.Exchange(ref lastSeekTicks, 0);
+            commandQueue.Enqueue("next");
+        };
+        player.CommandManager.PreviousReceived += (s, e) =>
+        {
+            e.Handled = true;
+            Interlocked.Exchange(ref pendingSeekMs, -1);
+            Interlocked.Exchange(ref lastSeekTicks, 0);
+            commandQueue.Enqueue("prev");
+        };
+        player.CommandManager.PositionReceived += (s, e) =>
+        {
+            e.Handled = true;
+            long ms = (long)e.Position.TotalMilliseconds;
+            if (ms < 0) ms = 0;
+            Interlocked.Exchange(ref pendingSeekMs, ms);
+            Interlocked.Exchange(ref lastSeekTicks, DateTime.UtcNow.Ticks);
+            try { player.PlaybackSession.Position = e.Position; } catch { }
+        };
 
         var listener = new HttpListener();
         listener.Prefixes.Add("http://127.0.0.1:9999/");
@@ -67,7 +92,7 @@ class SmtcServer
                     {
                         json = reader.ReadToEnd();
                     }
-                    
+
                     var data = js.Deserialize<Dictionary<string, object>>(json);
                     string title = data.ContainsKey("title") ? data["title"] as string : null;
                     string artist = data.ContainsKey("artist") ? data["artist"] as string : null;
@@ -89,6 +114,7 @@ class SmtcServer
 
                     if (recreateSource)
                     {
+                        Interlocked.Exchange(ref lastSeekTicks, 0);
                         if (durSec > 0) lastDuration = durSec;
                         var desc = new AudioStreamDescriptor(AudioEncodingProperties.CreatePcm(44100, 2, 16));
                         var mss = new MediaStreamSource(desc);
@@ -130,7 +156,7 @@ class SmtcServer
                             if (title != null) props.MusicProperties.Title = title;
                             if (artist != null) props.MusicProperties.Artist = artist;
                             if (album != null) props.MusicProperties.AlbumTitle = album;
-                            
+
                             try {
                                 if (!string.IsNullOrEmpty(cover)) {
                                     byte[] imgData = null;
@@ -156,13 +182,13 @@ class SmtcServer
                                     }
                                     if (imgData != null && imgData.Length > 0) {
                                         try { File.WriteAllBytes(Path.Combine(Path.GetTempPath(), "music_center_cover_current.jpg"), imgData); } catch {}
-                                            var stream = new InMemoryRandomAccessStream();
-                                            var dwb = new DataWriter();
-                                            dwb.WriteBytes(imgData);
-                                            var wop = stream.WriteAsync(dwb.DetachBuffer());
-                                            while (wop.Status == Windows.Foundation.AsyncStatus.Started) System.Threading.Thread.Sleep(1);
-                                            wop.GetResults();
-                                            stream.Seek(0);
+                                        var stream = new InMemoryRandomAccessStream();
+                                        var dwb = new DataWriter();
+                                        dwb.WriteBytes(imgData);
+                                        var wop = stream.WriteAsync(dwb.DetachBuffer());
+                                        while (wop.Status == Windows.Foundation.AsyncStatus.Started) System.Threading.Thread.Sleep(1);
+                                        wop.GetResults();
+                                        stream.Seek(0);
                                         if (lastThumbStream != null) { try { lastThumbStream.Dispose(); } catch {} }
                                         lastThumbStream = stream;
                                         props.Thumbnail = Windows.Storage.Streams.RandomAccessStreamReference.CreateFromStream(stream);
@@ -181,7 +207,8 @@ class SmtcServer
 
                     if (position != null) {
                         try {
-                            if (Math.Abs(player.PlaybackSession.Position.TotalSeconds - posSec) > 3) {
+                            bool recentlySeeked = (DateTime.UtcNow.Ticks - Interlocked.Read(ref lastSeekTicks)) < TimeSpan.FromMilliseconds(1500).Ticks;
+                            if (!recentlySeeked && Math.Abs(player.PlaybackSession.Position.TotalSeconds - posSec) > 3) {
                                 player.PlaybackSession.Position = TimeSpan.FromSeconds(posSec);
                             }
                         } catch {}
@@ -196,8 +223,13 @@ class SmtcServer
                 }
                 else if (req.Url.AbsolutePath == "/poll" && req.HttpMethod == "GET")
                 {
-                    string command;
-                    if (!commandQueue.TryDequeue(out command))
+                    string command = "";
+                    long seekMs = Interlocked.Exchange(ref pendingSeekMs, -1);
+                    if (seekMs >= 0)
+                    {
+                        command = "seek:" + seekMs.ToString();
+                    }
+                    else if (!commandQueue.TryDequeue(out command))
                     {
                         command = "";
                     }
